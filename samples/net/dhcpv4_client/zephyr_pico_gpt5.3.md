@@ -6,12 +6,49 @@ This guide explains how to build, flash, run, and verify:
 - Board: rpi_pico
 - Ethernet controller: ETH_DM9051 (SPI interface)
 
+## Quickest 3-Command Flow (Windows PowerShell)
+
+```powershell
+cd C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_client ; C:/Users/joseph/scoop/apps/python313/current/python.exe -m pip install --upgrade jsonschema pyelftools ; west build -p always -b rpi_pico . --% -- -DDTC_OVERLAY_FILE=boards/rpi_pico.overlay -DEXTRA_CONF_FILE=overlay-dm9051.conf ; C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe load build/zephyr/zephyr.elf -fx
+```
+
+## One-Line Alias (Paste Once, Then Run Fast)
+
+Current terminal only (paste once, then use `pico-dhcp-run` anytime in this session):
+
+```powershell
+Set-Item -Path Function:pico-dhcp-run -Value { Set-Location 'C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_client'; & 'C:/Users/joseph/scoop/apps/python313/current/python.exe' -m pip install --upgrade jsonschema pyelftools; & west build -p always -b rpi_pico . -- '-DDTC_OVERLAY_FILE=boards/rpi_pico.overlay' '-DEXTRA_CONF_FILE=overlay-dm9051.conf'; & 'C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe' load build/zephyr/zephyr.elf -fx }
+```
+
+Run it:
+
+```powershell
+pico-dhcp-run
+```
+
+Persistent alias (survives new terminal windows):
+
+```powershell
+if (!(Test-Path $PROFILE)) { New-Item -Type File -Path $PROFILE -Force | Out-Null }; Add-Content $PROFILE "`nfunction pico-dhcp-run { Set-Location 'C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_client'; & 'C:/Users/joseph/scoop/apps/python313/current/python.exe' -m pip install --upgrade jsonschema pyelftools; & west build -p always -b rpi_pico . -- '-DDTC_OVERLAY_FILE=boards/rpi_pico.overlay' '-DEXTRA_CONF_FILE=overlay-dm9051.conf'; & 'C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe' load build/zephyr/zephyr.elf -fx }"
+```
+
+If flash fails because the board is not in BOOTSEL mode, hold BOOTSEL, plug USB,
+then run `pico-dhcp-run` again.
+
+This avoids the CMSIS-DAP requirement of `west flash` in probe-less setups.
+
 ## 1) Prerequisites
 
 1. Zephyr workspace is already set up under:
    - C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main
 2. A DM9051 SPI Ethernet module is wired to Raspberry Pi Pico.
 3. The network side has a DHCP server (router or test DHCP server).
+4. Python dependencies required by this Zephyr workspace are installed in the
+	same Python used by west:
+
+```powershell
+C:/Users/joseph/scoop/apps/python313/current/python.exe -m pip install --upgrade jsonschema pyelftools
+```
 
 ## 2) Devicetree Overlay
 
@@ -26,7 +63,7 @@ Use this content:
 #include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
 
 /* SPI0: MISO=16, CS=17, SCK=18, MOSI=19
- * DM9051 INT=20 (active low), RESET=21 (active low)
+ * DM9051 INT=20 (active low)
  */
 
 &pinctrl {
@@ -48,7 +85,6 @@ Use this content:
 		reg = <0>;
 		spi-max-frequency = <12000000>;
 		int-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
 };
@@ -72,17 +108,22 @@ CONFIG_ETHERNET_LOG_LEVEL_DBG=y
 
 ## 4) Build
 
-Open terminal and switch to Zephyr workspace root first:
+Open terminal and switch to the sample directory first:
 
 ```powershell
-cd C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main
+cd C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_client
 ```
 
-Build command:
+Build command (PowerShell):
 
 ```powershell
-west build -p always -b rpi_pico samples/net/dhcpv4_client -- -DDTC_OVERLAY_FILE=samples/net/dhcpv4_client/boards/rpi_pico.overlay -DEXTRA_CONF_FILE=samples/net/dhcpv4_client/overlay-dm9051.conf
+west build -p always -b rpi_pico . --% -- -DDTC_OVERLAY_FILE=boards/rpi_pico.overlay -DEXTRA_CONF_FILE=overlay-dm9051.conf
 ```
+
+Why `--%` on Windows PowerShell?
+
+- It prevents PowerShell from mangling arguments that include `.overlay` and
+	`.conf` values.
 
 If SPI is unstable in your setup, lower speed by editing overlay:
 
@@ -99,14 +140,14 @@ west flash
 ### Option B: picotool (recommended if west flash fails)
 
 ```powershell
-C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe load C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/build/zephyr/zephyr.elf -fx
+C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe load C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_client/build/zephyr/zephyr.elf -fx
 ```
 
 ### Option C: UF2 drag and drop
 
 Use file:
 
-- build/zephyr/zephyr.uf2
+- samples/net/dhcpv4_client/build/zephyr/zephyr.uf2
 
 ## 6) Run and Verify DHCP
 
@@ -131,6 +172,15 @@ Use file:
 5. Command west topdir fails:
    - Ensure terminal current directory is inside Zephyr west workspace,
      such as C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main.
+6. CMake error: Missing jsonschema dependency:
+	- Install with:
+	  C:/Users/joseph/scoop/apps/python313/current/python.exe -m pip install jsonschema
+7. Build error: ModuleNotFoundError: No module named 'elftools':
+	- Install with:
+	  C:/Users/joseph/scoop/apps/python313/current/python.exe -m pip install pyelftools
+8. Overlay/conf path parsed incorrectly in PowerShell (e.g. `.overlay` or
+	`.conf` split from file name):
+	- Use `--%` in the west build command as shown in section 4.
 
 ## 8) Quick Wiring Reference
 
