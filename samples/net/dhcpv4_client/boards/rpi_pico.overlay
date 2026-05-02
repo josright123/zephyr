@@ -4,6 +4,20 @@
 /* SPI0: MISO=16, CS=17, SCK=18, MOSI=19
  * DM9051 INT=20 (active low)
  */
+
+/ {
+    chosen {
+        zephyr,console = &cdc_acm_uart0;
+        zephyr,shell-uart = &cdc_acm_uart0;
+    };
+};
+
+&zephyr_udc0 {
+    cdc_acm_uart0: cdc_acm_uart0 {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};
+
 &pinctrl {
     spi0_dm9051_default: spi0_dm9051_default {
         group1 {
