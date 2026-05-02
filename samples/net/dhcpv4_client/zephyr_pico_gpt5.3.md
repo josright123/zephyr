@@ -17,7 +17,7 @@ cd C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_cli
 Current terminal only (paste once, then use `pico-dhcp-run` anytime in this session):
 
 ```powershell
-Set-Item -Path Function:pico-dhcp-run -Value { Set-Location 'C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_client'; & 'C:/Users/joseph/scoop/apps/python313/current/python.exe' -m pip install --upgrade jsonschema pyelftools; & west build -p always -b rpi_pico . -- '-DDTC_OVERLAY_FILE=boards/rpi_pico.overlay' '-DEXTRA_CONF_FILE=overlay-dm9051.conf'; & 'C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe' load build/zephyr/zephyr.elf -fx }
+Set-Item -Path Function:pico-dhcp-run -Value { Set-Location 'C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_client'; & 'C:/Users/joseph/scoop/apps/python313/current/python.exe' -m pip install --upgrade jsonschema pyelftools; & west build -p always -b rpi_pico . -- '-DDTC_OVERLAY_FILE=boards/rpi_pico.overlay' '-DEXTRA_CONF_FILE=overlay-dm9051.conf'; & 'C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe' info *> $null; if ($LASTEXITCODE -ne 0) { Write-Host 'Pico not found in BOOTSEL mode. Hold BOOTSEL and reconnect USB, then run pico-dhcp-run again.' -ForegroundColor Yellow; return }; & 'C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe' load build/zephyr/zephyr.elf -fx }
 ```
 
 Run it:
@@ -29,11 +29,11 @@ pico-dhcp-run
 Persistent alias (survives new terminal windows):
 
 ```powershell
-if (!(Test-Path $PROFILE)) { New-Item -Type File -Path $PROFILE -Force | Out-Null }; Add-Content $PROFILE "`nfunction pico-dhcp-run { Set-Location 'C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_client'; & 'C:/Users/joseph/scoop/apps/python313/current/python.exe' -m pip install --upgrade jsonschema pyelftools; & west build -p always -b rpi_pico . -- '-DDTC_OVERLAY_FILE=boards/rpi_pico.overlay' '-DEXTRA_CONF_FILE=overlay-dm9051.conf'; & 'C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe' load build/zephyr/zephyr.elf -fx }"
+if (!(Test-Path $PROFILE)) { New-Item -Type File -Path $PROFILE -Force | Out-Null }; Add-Content $PROFILE "`nfunction pico-dhcp-run { Set-Location 'C:/Users/joseph/.pico-sdk/zephyr_workspace/zephyr-main/samples/net/dhcpv4_client'; & 'C:/Users/joseph/scoop/apps/python313/current/python.exe' -m pip install --upgrade jsonschema pyelftools; & west build -p always -b rpi_pico . -- '-DDTC_OVERLAY_FILE=boards/rpi_pico.overlay' '-DEXTRA_CONF_FILE=overlay-dm9051.conf'; & 'C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe' info *> `$null; if (`$LASTEXITCODE -ne 0) { Write-Host 'Pico not found in BOOTSEL mode. Hold BOOTSEL and reconnect USB, then run pico-dhcp-run again.' -ForegroundColor Yellow; return }; & 'C:/Users/joseph/.pico-sdk/picotool/2.2.0-a4/picotool/picotool.exe' load build/zephyr/zephyr.elf -fx }"
 ```
 
-If flash fails because the board is not in BOOTSEL mode, hold BOOTSEL, plug USB,
-then run `pico-dhcp-run` again.
+The function now checks BOOTSEL visibility before flashing and prints guidance if
+the board is not detectable.
 
 This avoids the CMSIS-DAP requirement of `west flash` in probe-less setups.
 
