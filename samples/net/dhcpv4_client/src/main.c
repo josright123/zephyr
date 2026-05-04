@@ -30,7 +30,44 @@ static struct net_mgmt_event_callback mgmt_cb;
 
 static struct net_dhcpv4_option_callback dhcp_cb;
 
-static bool is_dm9051_iface(const struct net_if *iface)
+static const char *oper_state_to_str(enum net_if_oper_state state)
+{
+	switch (state) {
+	case NET_IF_OPER_UNKNOWN:
+		return "UNKNOWN";
+	case NET_IF_OPER_NOTPRESENT:
+		return "NOTPRESENT";
+	case NET_IF_OPER_DOWN:
+		return "DOWN";
+	case NET_IF_OPER_LOWERLAYERDOWN:
+		return "LOWERLAYERDOWN";
+	case NET_IF_OPER_TESTING:
+		return "TESTING";
+	case NET_IF_OPER_DORMANT:
+		return "DORMANT";
+	case NET_IF_OPER_UP:
+		return "UP";
+	default:
+		return "INVALID";
+	}
+}
+
+static void log_iface_status(struct net_if *iface, const char *tag)
+{
+	enum net_if_oper_state oper = net_if_oper_state(iface);
+
+	LOG_INF("%s: iface=%s idx=%d is_up=%d admin=%d carrier=%d oper=%s(%u)",
+		tag,
+		net_if_get_device(iface)->name,
+		net_if_get_by_iface(iface),
+		net_if_is_up(iface),
+		net_if_is_admin_up(iface),
+		net_if_is_carrier_ok(iface),
+		oper_state_to_str(oper),
+		(unsigned int)oper);
+}
+
+static bool is_dm9051_iface(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 
@@ -44,11 +81,23 @@ static bool is_dm9051_iface(const struct net_if *iface)
 
 static void start_dhcpv4_client(struct net_if *iface, void *user_data)
 {
+	int ret;
+
 	ARG_UNUSED(user_data);
+	log_iface_status(iface, "Before net_if_up");
+
+	ret = net_if_up(iface);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_WRN("Failed to bring iface %s up (%d)",
+			net_if_get_device(iface)->name, ret);
+	}
+	log_iface_status(iface, "After net_if_up");
 
 	LOG_INF("Start on %s: index=%d", net_if_get_device(iface)->name,
 		net_if_get_by_iface(iface));
+	LOG_INF("Calling net_dhcpv4_start() on iface=%s", net_if_get_device(iface)->name);
 	net_dhcpv4_start(iface);
+	log_iface_status(iface, "After net_dhcpv4_start");
 }
 
 static void handler(struct net_mgmt_event_callback *cb,
@@ -59,17 +108,53 @@ static void handler(struct net_mgmt_event_callback *cb,
 
 	ARG_UNUSED(cb);
 
-	if (mgmt_event == NET_EVENT_ETHERNET_CARRIER_ON && is_dm9051_iface(iface)) {
-		LOG_INF("DM9051 link up (iface=%s, index=%d)",
-			net_if_get_device(iface)->name,
-			net_if_get_by_iface(iface));
+	if (mgmt_event == NET_EVENT_IF_UP) {
+		LOG_INF("NET_EVENT_IF_UP");
+		log_iface_status(iface, "IF_UP");
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_ETHERNET_CARRIER_OFF && is_dm9051_iface(iface)) {
-		LOG_INF("DM9051 link down (iface=%s, index=%d)",
-			net_if_get_device(iface)->name,
-			net_if_get_by_iface(iface));
+	if (mgmt_event == NET_EVENT_IF_DOWN) {
+		LOG_INF("NET_EVENT_IF_DOWN");
+		log_iface_status(iface, "IF_DOWN");
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_ETHERNET_CARRIER_ON) {
+		if (is_dm9051_iface(iface)) {
+			LOG_INF("DM9051 link up (iface=%s, index=%d)",
+				net_if_get_device(iface)->name,
+				net_if_get_by_iface(iface));
+		}
+		log_iface_status(iface, "CARRIER_ON");
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_ETHERNET_CARRIER_OFF) {
+		if (is_dm9051_iface(iface)) {
+			LOG_INF("DM9051 link down (iface=%s, index=%d)",
+				net_if_get_device(iface)->name,
+				net_if_get_by_iface(iface));
+		}
+		log_iface_status(iface, "CARRIER_OFF");
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_IPV4_DHCP_START) {
+		LOG_INF("NET_EVENT_IPV4_DHCP_START");
+		log_iface_status(iface, "DHCP_START");
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_IPV4_DHCP_BOUND) {
+		LOG_INF("NET_EVENT_IPV4_DHCP_BOUND lease=%u", iface->config.dhcpv4.lease_time);
+		log_iface_status(iface, "DHCP_BOUND");
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_IPV4_DHCP_STOP) {
+		LOG_INF("NET_EVENT_IPV4_DHCP_STOP");
+		log_iface_status(iface, "DHCP_STOP");
 		return;
 	}
 
@@ -115,10 +200,18 @@ static void option_handler(struct net_dhcpv4_option_callback *cb,
 
 int main(void)
 {
-	LOG_INF("Run dhcpv4 client");
+	//LOG_INF("Run dhcpv4 client");
+	LOG_INF("Run dhcpv4 client - use 'west build -t menuconfig' to set the correct MAC address if it is not set in device tree or if random MAC address is not used");
+	LOG_INF("Run dhcpv4 client - make sure to connect the Ethernet cable ");
+	LOG_INF("Run dhcpv4 client - before starting the board ");
 
 	net_mgmt_init_event_callback(&mgmt_cb, handler,
+				     NET_EVENT_IF_UP |
+				     NET_EVENT_IF_DOWN |
 				     NET_EVENT_IPV4_ADDR_ADD |
+				     NET_EVENT_IPV4_DHCP_START |
+				     NET_EVENT_IPV4_DHCP_BOUND |
+				     NET_EVENT_IPV4_DHCP_STOP |
 				     NET_EVENT_ETHERNET_CARRIER_ON |
 				     NET_EVENT_ETHERNET_CARRIER_OFF);
 	net_mgmt_add_event_callback(&mgmt_cb);
