@@ -1,0 +1,26 @@
+# Copyright (c) 2025 - 2026, Davicom, Inc. Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: DM9051 standalone 10/100BASE-T Ethernet controller with SPI interface
+
+compatible: "davicom,dm9051"
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    #required: true
+    description: Interrupt pin.
+
+      The interrupt pin of DM9051 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+  reset-gpios:
+    type: phandle-array
+    #required: true
+    description: Reset pin.
+
+      Reset GPIO pin for hardware reset of the DM9051 chip.
+      This pin is active low. The driver will toggle this pin
+      with a low pluse during initialization to perform a hardware reset.

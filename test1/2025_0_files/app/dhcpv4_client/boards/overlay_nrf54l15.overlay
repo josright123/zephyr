@@ -1,0 +1,37 @@
+
+&rram_controller {
+	/delete-node/ cpuflpr_sram;
+	/delete-node/ cpuflpr_rram;
+};
+
+/* Adjust the cpuapp_sram to include the freed up cpuflpr_sram */
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(256)>;
+	ranges = <0x0 0x20000000 0x20040000>;
+};
+
+/* Adjust the cpuapp_rram to include the freed up cpuflpr_rram */
+&cpuapp_rram {
+	reg = <0x0 DT_SIZE_K(1524)>;
+};
+
+
+/* Disable NFCT to free up NFC pins for GPIO usage */
+&nfct {
+	status = "disabled";
+};
+
+/* Configure UICR to use NFCT pins as GPIOs */
+&uicr {
+	nfct-pins-as-gpios;
+};
+
+/* Ensure GPIO2 is enabled for LED0 */
+&gpio2 {
+	status = "okay";
+};
+
+/* Ensure LED0 mapping matches the board dts (GPIO2.9, active high) */
+&led0 {
+	gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
+};
