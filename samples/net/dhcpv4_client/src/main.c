@@ -14,11 +14,13 @@ LOG_MODULE_REGISTER(net_dhcpv4_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/linker/sections.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/ethernet_mgmt.h>
 
 #define DHCP_OPTION_NTP (42)
 
@@ -27,6 +29,18 @@ static uint8_t ntp_server[4];
 static struct net_mgmt_event_callback mgmt_cb;
 
 static struct net_dhcpv4_option_callback dhcp_cb;
+
+static bool is_dm9051_iface(const struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+
+	if (dev == NULL || dev->name == NULL) {
+		return false;
+	}
+
+	return (strstr(dev->name, "dm9051") != NULL) ||
+	       (strstr(dev->name, "DM9051") != NULL);
+}
 
 static void start_dhcpv4_client(struct net_if *iface, void *user_data)
 {
@@ -42,6 +56,22 @@ static void handler(struct net_mgmt_event_callback *cb,
 		    struct net_if *iface)
 {
 	int i = 0;
+
+	ARG_UNUSED(cb);
+
+	if (mgmt_event == NET_EVENT_ETHERNET_CARRIER_ON && is_dm9051_iface(iface)) {
+		LOG_INF("DM9051 link up (iface=%s, index=%d)",
+			net_if_get_device(iface)->name,
+			net_if_get_by_iface(iface));
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_ETHERNET_CARRIER_OFF && is_dm9051_iface(iface)) {
+		LOG_INF("DM9051 link down (iface=%s, index=%d)",
+			net_if_get_device(iface)->name,
+			net_if_get_by_iface(iface));
+		return;
+	}
 
 	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
 		return;
@@ -88,7 +118,9 @@ int main(void)
 	LOG_INF("Run dhcpv4 client");
 
 	net_mgmt_init_event_callback(&mgmt_cb, handler,
-				     NET_EVENT_IPV4_ADDR_ADD);
+				     NET_EVENT_IPV4_ADDR_ADD |
+				     NET_EVENT_ETHERNET_CARRIER_ON |
+				     NET_EVENT_ETHERNET_CARRIER_OFF);
 	net_mgmt_add_event_callback(&mgmt_cb);
 
 	net_dhcpv4_init_option_callback(&dhcp_cb, option_handler,
