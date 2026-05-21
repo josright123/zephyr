@@ -586,6 +586,11 @@ static inline void dm9058_decode_rx_timestamp(const uint8_t *buf, size_t len,
 		ts->second = 0U;
 	}
 }
+#else
+static inline uint8_t dm9058_rx_error_mask(void)
+{
+	return RSR_ERR_BITS;
+}
 #endif
 
 #if defined(CONFIG_NET_GPTP)
@@ -1987,7 +1992,7 @@ static int eth_dm9058_init(const struct device *dev)
 
 #define DM9058_DEFINE(inst)                                                                        \
 	static struct dm9058_runtime dm9058_runtime_##inst = {                                     \
-		.mac_address = DT_INST_PROP(inst, local_mac_address),                              \
+		.mac_address = DT_INST_PROP_OR(inst, local_mac_address, {0}),                              \
 		.tx_rx_sem = Z_SEM_INITIALIZER((dm9058_runtime_##inst).tx_rx_sem, 1, UINT_MAX),    \
 		.int_sem = Z_SEM_INITIALIZER((dm9058_runtime_##inst).int_sem, 0, UINT_MAX),        \
 		.link_up = false,                                                                  \
