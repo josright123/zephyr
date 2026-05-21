@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+description: Davicom DM9058 10/100BASE-T Ethernet Controller with SPI interface
+
+compatible: "davicom,dm9058"
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin of DM9058. The interrupt pin is active low.
