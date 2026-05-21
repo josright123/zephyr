@@ -1,15 +1,27 @@
 # Davicom DM9058 Ethernet driver configuration options
 
-# Copyright (c) 2026 Andrei-Edward Popa
+# Copyright (c) 2026 Davicom Semiconductor Incorporation
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_DM9058
 	bool "Davicom DM9058 Ethernet Controller"
-	default y
+	default n
 	depends on DT_HAS_DAVICOM_DM9058_ENABLED
+	depends on !ETH_DM9051
 	select SPI
 	help
-	  Davicom DM9058 Ethernet Controller with SPI Interface
+	  Davicom DM9058 Stand-Alone Ethernet Controller
+	  with SPI Interface
+
+if ETH_DM9058
+
+config ETH_DM9058_DEBUG_PRINTS
+	bool "Enable DM9058 debug printk output"
+	depends on ETH_DM9058
+	default n
+	help
+	  Enable verbose printk-based debug output in the DM9058 driver.
+	  Disable to reduce console noise
 
 config ETH_DM9058_RX_THREAD_STACK_SIZE
 	int "Stack size for internal incoming packet handler"
@@ -19,13 +31,34 @@ config ETH_DM9058_RX_THREAD_STACK_SIZE
 	  Size of the stack used for internal thread which is ran for
 	  incoming packet processing.
 
-config ETH_DM9058_RX_THREAD_PRIORITY
+config ETH_DM9058_RX_THREAD_PRIO
 	int "Priority for internal incoming packet handler"
 	depends on ETH_DM9058
 	default 2
 	help
 	  Priority level for internal thread which is ran for incoming
 	  packet processing.
+
+config ETH_DM9058_TX_CHECKSUM_OFFLOAD
+	bool "Enable DM9058 checksum offload"
+	depends on ETH_DM9058
+	default n
+	help
+	  Enable checksum offload.
+
+config ETH_DM9058_RX_CHECKSUM_OFFLOAD
+	bool "Enable DM9058 RX checksum offload"
+	depends on ETH_DM9058
+	default n
+	help
+	  Enable RX checksum offload.
+
+config ETH_DM9058_MULTICAST_FILTER
+	bool "Enable DM9058 multicast pass all"
+	depends on ETH_DM9058
+	default n
+	help
+	  Enable multicast pass all.
 
 config ETH_DM9058_TIMEOUT
 	int "IP buffer timeout"
@@ -35,3 +68,5 @@ config ETH_DM9058_TIMEOUT
 	  Given timeout in milliseconds. Maximum amount of time
 	  that the driver will wait from the IP stack to get
 	  a memory buffer before the Ethernet frame is dropped.
+
+endif # ETH_DM9058
