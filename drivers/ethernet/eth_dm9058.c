@@ -1326,6 +1326,10 @@ static int dm9058_ptp_clock_set(const struct device *dev, struct net_ptp_time *t
 	dm9058_write_reg(ctx->eth_dev, DM9058_PTPCW, DM9058_PTP_TCR_RESET_INDEX);
 	dm9058_ptp_write_stream(ctx->eth_dev, raw, sizeof(raw));
 	dm9058_write_reg(ctx->eth_dev, DM9058_PTPCW, DM9058_PTP_TCR_APPLY_SET_TIME);
+	LOG_INF("%s 522:  Write phc_timestamp %9" PRIu64 " s %9" PRIu32 " ns",
+		ctx->eth_dev->name, tm->second, tm->nanosecond);
+	LOG_INF("%s 523:  Write phc_timestamp %9" PRIu64 " s %9" PRIu32 " ns",
+		ctx->eth_dev->name, tm->second, tm->nanosecond);
 	ctx->last_rate = 0;
 
 	dm9058_ptp_unlock(ctx->eth_dev);
