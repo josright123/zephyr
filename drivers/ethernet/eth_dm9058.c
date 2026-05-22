@@ -964,7 +964,8 @@ static int dm9058_rx_packet(const struct device *dev)
 	if (!rx_ts_valid) {
 		if (dm9058_ptp_read_time_locked(dev, &rx_ts) == 0) {
 			rx_ts_valid = true;
-			LOG_INF("%s:  RX phc_head_timestamp %9" PRIu64 " s %9" PRIu32 " ns [INSTEAD]", dev->name, rx_ts.second, rx_ts.nanosecond);
+			LOG_INF("%s 520:  RX phc_head_timestamp %9" PRIu64 " s %9" PRIu32 " ns [INSTEAD]", dev->name, rx_ts.second, rx_ts.nanosecond);
+			LOG_INF("%s 521:  RX phc_head_timestamp %9" PRIu64 " s %9" PRIu32 " ns [INSTEAD]", dev->name, rx_ts.second, rx_ts.nanosecond);
 		}
 		else
 			LOG_ERR("%s:  RX phc_head_timestamp [WANT TO INSTEAD BUT FAIL]", dev->name);
@@ -1036,7 +1037,7 @@ static uint8_t dm9058_link_status(const struct device *dev)
 		if (context->link_up != true) {
 			printk("\n");
 			DM9058_DBG("\n(link_status.o=%d)\n", DM9058_ENDC_INC());
-			LOG_INF("_dm9058_link_status: +%s: Link up", dev->name);
+			LOG_INF("_dm9058_link_status 521: +%s: Link up", dev->name);
 			context->link_up = true;
 			net_eth_carrier_on(context->iface);
 		}
