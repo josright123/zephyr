@@ -216,6 +216,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 		break;
 
 	case GPTP_FOLLOWUP_MESSAGE:
+	#if 0 //260522.track.good1-step0(orinal)
 		if (GPTP_CHECK_LEN(pkt, GPTP_FOLLOW_UP_LEN)) {
 			NET_WARN("Invalid length for %s packet "
 				 "should have %zd bytes but has %zd bytes",
@@ -225,6 +226,14 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 			GPTP_STATS_INC(port, rx_ptp_packet_discard_count);
 			break;
 		}
+	#endif
+	#if 1 //260522.track.good1-step0(new)
+		if (GPTP_PACKET_LEN(pkt) < GPTP_FOLLOW_UP_LEN) {
+			NET_WARN("Short FOLLOWUP: %zd bytes (expected %zd)"
+				 " - 802.1AS TLV absent - using defaults",
+				 GPTP_PACKET_LEN(pkt), GPTP_FOLLOW_UP_LEN);
+		}
+	#endif
 
 		PRINT_INFO("FOLLOWUP", hdr, pkt);
 
@@ -269,6 +278,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 		break;
 
 	case GPTP_ANNOUNCE_MESSAGE:
+	#if 0 //260522.track.good1-step0(orinal)
 		if (GPTP_ANNOUNCE_CHECK_LEN(pkt)) {
 			NET_WARN("Invalid length for %s packet "
 				 "should have %zd bytes but has %zd bytes",
@@ -278,6 +288,35 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 			GPTP_STATS_INC(port, rx_ptp_packet_discard_count);
 			break;
 		}
+	#endif
+	#if 1 //260522.track.good1-step0(new) 
+		{
+		/* Minimum: gPTP header + announce fields before path trace TLV.
+		 * GPTP_ANNOUNCE_LEN(pkt) reads announce->tlv.len, which is only
+		 * safe when the TLV header (type+len = 4 bytes) is present.
+		 * A non-compliant master may omit the path trace TLV entirely.
+		 */
+		const size_t ann_min_len = sizeof(struct gptp_hdr) +
+			offsetof(struct gptp_announce, tlv);
+		/* Only call GPTP_ANNOUNCE_CHECK_LEN when TLV header bytes are
+		 * present, otherwise announce->tlv.len reads garbage memory.
+		 */
+		if (GPTP_PACKET_LEN(pkt) <
+		    ann_min_len + sizeof(struct gptp_path_trace_tlv)) {
+			/* Path trace TLV absent: zero it so copy_path_trace()
+			 * reads len=0 and performs no out-of-bounds memcpy.
+			 */
+			struct gptp_announce *ann_hdr = GPTP_ANNOUNCE(pkt);
+
+			ann_hdr->tlv.type = 0U;
+			ann_hdr->tlv.len  = 0U;
+			memset(ann_hdr->tlv.path_sequence, 0,
+			       sizeof(ann_hdr->tlv.path_sequence));
+			NET_WARN("Short ANNOUNCE: %zd bytes - path trace TLV absent",
+				 GPTP_PACKET_LEN(pkt));
+		}
+		}
+	#endif
 
 		PRINT_INFO("ANNOUNCE", hdr, pkt);
 
