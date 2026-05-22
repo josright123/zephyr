@@ -1,0 +1,32 @@
+[00:28:33.313,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:33.443,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:33.447,000] <inf> net_gptp: offset from master: 0 s     63 ns  drift_acc -24993596 path_delay 388 ns
+[00:28:33.573,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:33.703,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:33.833,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:33.963,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:34.094,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:34.149,000] <wrn> net_gptp: Short ANNOUNCE: 64 bytes, path trace TLV absent
+[00:28:34.223,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:34.359,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:34.483,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:34.487,000] <inf> net_gptp: offset from master: 0 s     95 ns  drift_acc -24993567 path_delay 389 ns
+[00:28:34.612,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:34.742,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:34.873,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:35.009,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:35.133,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:35.147,000] <wrn> net_gptp: Short ANNOUNCE: 64 bytes, path trace TLV absent
+[00:28:35.262,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:35.394,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:35.398,000] <inf> net_gptp: offset from master: 0 s    111 ns  drift_acc -24993534 path_delay 389 ns
+[00:28:35.522,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:35.652,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:35.782,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:35.912,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:36.042,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:36.147,000] <wrn> net_gptp: Short ANNOUNCE: 64 bytes, path trace TLV absent
+[00:28:36.172,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:36.302,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:36.432,000] <wrn> net_gptp: Short FOLLOWUP: 46 bytes (expected 76), 802.1AS TLV absent - using defaults
+[00:28:36.436,000] <inf> net_gptp: offset from master: 0 s    -49 ns  drift_acc -24993548 path_delay 389 ns
