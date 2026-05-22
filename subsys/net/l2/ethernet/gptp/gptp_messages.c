@@ -592,8 +592,11 @@ void gptp_handle_sync(int port, struct net_pkt *pkt)
 
 	upstream_sync_itv = NSEC_PER_SEC * GPTP_POW2(hdr->log_msg_interval);
 
-	/* Convert ns to ms. */
-	duration = K_MSEC((upstream_sync_itv / 1000000U));
+	/* Convert ns to ms.  Use 2× the sync interval as the Follow_Up wait
+	 * timeout to tolerate jitter from non-ideal PTP masters that send
+	 * Follow_Up slightly after the nominal sync interval boundary.
+	 */
+	duration = K_MSEC((upstream_sync_itv * 2U / 1000000U));
 
 	/* Start timeout timer. */
 	k_timer_start(&state->follow_up_discard_timer, duration, K_NO_WAIT);

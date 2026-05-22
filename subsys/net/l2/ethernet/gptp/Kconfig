@@ -224,6 +224,18 @@ config NET_GPTP_BMCA_PRIORITY2
 	  See Chapter 8.6.2.5 of IEEE 802.1AS for a more detailed description
 	  of priority2.
 
+config NET_GPTP_ASSUME_AS_CAPABLE
+	bool "Assume AS-Capable without pDelay verification"
+	help
+	  When enabled, a port is treated as AS-Capable from the start, and
+	  pDelay failures do not clear the AS-Capable flag.  Use this option
+	  when connecting to a plain IEEE 1588 master that does not implement
+	  the IEEE 802.1AS peer-delay mechanism.  The pDelay request machine
+	  continues running in the background; if the peer does respond, the
+	  standard rate-ratio and propagation-delay computation takes over.
+	  WARNING: This is non-compliant with IEEE 802.1AS when the measured
+	  neighbor propagation delay exceeds the configured threshold.
+
 config NET_GPTP_STATISTICS
 	bool "Collect gPTP statistics"
 	help

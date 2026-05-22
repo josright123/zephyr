@@ -215,15 +215,29 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 		pdelay_req_state->rcvd_pdelay_resp_ptr = pkt;
 		break;
 
-	case GPTP_FOLLOWUP_MESSAGE:
-		if (GPTP_CHECK_LEN(pkt, GPTP_FOLLOW_UP_LEN)) {
+	case GPTP_FOLLOWUP_MESSAGE: {
+		/* Minimum acceptable size: gPTP header + preciseOriginTimestamp
+		 * only (no 802.1AS organization-specific TLV).
+		 * Non-compliant PTP masters may send standard IEEE 1588 Follow_Up
+		 * (46 bytes) without the mandatory 802.1AS TLV extension.
+		 * In that case gptp_md.c will supply neutral defaults for the
+		 * missing TLV fields (rate_ratio=1.0, phase/freq change = 0).
+		 */
+		const size_t fup_min_len = sizeof(struct gptp_hdr) +
+			offsetof(struct gptp_follow_up, tlv_hdr);
+
+		if (GPTP_PACKET_LEN(pkt) < fup_min_len) {
 			NET_WARN("Invalid length for %s packet "
-				 "should have %zd bytes but has %zd bytes",
-				 "FOLLOWUP",
-				 GPTP_FOLLOW_UP_LEN,
+				 "should have at least %zu bytes but has %zd bytes",
+				 "FOLLOWUP", fup_min_len,
 				 GPTP_PACKET_LEN(pkt));
 			GPTP_STATS_INC(port, rx_ptp_packet_discard_count);
 			break;
+		}
+		if (GPTP_PACKET_LEN(pkt) < GPTP_FOLLOW_UP_LEN) {
+			NET_WARN("Short FOLLOWUP: %zd bytes (expected %zd), "
+				 "802.1AS TLV absent - using defaults",
+				 GPTP_PACKET_LEN(pkt), GPTP_FOLLOW_UP_LEN);
 		}
 
 		PRINT_INFO("FOLLOWUP", hdr, pkt);
@@ -240,6 +254,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 		NET_DBG("Keeping %s seq %d pkt %p", "FOLLOWUP",
 			net_ntohs(hdr->sequence_id), pkt);
 		break;
+	}
 
 	case GPTP_PATH_DELAY_FOLLOWUP_MESSAGE:
 		if (GPTP_CHECK_LEN(pkt, GPTP_PDELAY_RESP_FUP_LEN)) {
@@ -268,8 +283,27 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 		GPTP_STATS_INC(port, rx_pdelay_resp_fup_count);
 		break;
 
-	case GPTP_ANNOUNCE_MESSAGE:
-		if (GPTP_ANNOUNCE_CHECK_LEN(pkt)) {
+	case GPTP_ANNOUNCE_MESSAGE: {
+		/* Minimum: gPTP header + announce fields before path trace TLV.
+		 * GPTP_ANNOUNCE_LEN(pkt) reads announce->tlv.len, which is only
+		 * safe when the TLV header (type+len = 4 bytes) is present.
+		 * A non-compliant master may omit the path trace TLV entirely.
+		 */
+		const size_t ann_min_len = sizeof(struct gptp_hdr) +
+			offsetof(struct gptp_announce, tlv);
+
+		if (GPTP_PACKET_LEN(pkt) < ann_min_len) {
+			NET_WARN("Invalid length for %s packet "
+				 "should have at least %zu bytes but has %zd bytes",
+				 "ANNOUNCE", ann_min_len, GPTP_PACKET_LEN(pkt));
+			GPTP_STATS_INC(port, rx_ptp_packet_discard_count);
+			break;
+		}
+		/* Only call GPTP_ANNOUNCE_CHECK_LEN when TLV header bytes are
+		 * present, otherwise announce->tlv.len reads garbage memory.
+		 */
+		if (GPTP_PACKET_LEN(pkt) >= ann_min_len + 4U &&
+		    GPTP_ANNOUNCE_CHECK_LEN(pkt)) {
 			NET_WARN("Invalid length for %s packet "
 				 "should have %zd bytes but has %zd bytes",
 				 "ANNOUNCE",
@@ -277,6 +311,20 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 				 GPTP_PACKET_LEN(pkt));
 			GPTP_STATS_INC(port, rx_ptp_packet_discard_count);
 			break;
+		}
+		if (GPTP_PACKET_LEN(pkt) <
+		    ann_min_len + sizeof(struct gptp_path_trace_tlv)) {
+			/* Path trace TLV absent: zero it so copy_path_trace()
+			 * reads len=0 and performs no out-of-bounds memcpy.
+			 */
+			struct gptp_announce *ann_hdr = GPTP_ANNOUNCE(pkt);
+
+			ann_hdr->tlv.type = 0U;
+			ann_hdr->tlv.len  = 0U;
+			memset(ann_hdr->tlv.path_sequence, 0,
+			       sizeof(ann_hdr->tlv.path_sequence));
+			NET_WARN("Short ANNOUNCE: %zd bytes, path trace TLV absent",
+				 GPTP_PACKET_LEN(pkt));
 		}
 
 		PRINT_INFO("ANNOUNCE", hdr, pkt);
@@ -293,6 +341,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 
 		GPTP_STATS_INC(port, rx_announce_count);
 		break;
+	}
 
 	case GPTP_SIGNALING_MESSAGE:
 		if (GPTP_CHECK_LEN(pkt, GPTP_SIGNALING_LEN)) {
@@ -472,6 +521,15 @@ static void gptp_init_port_ds(int port)
 
 	port_ds->ptt_port_enabled = true;
 	port_ds->prev_ptt_port_enabled = true;
+
+#if defined(CONFIG_NET_GPTP_ASSUME_AS_CAPABLE)
+	/* Mark port as AS-Capable immediately so that SYNC/FOLLOWUP processing
+	 * can start without waiting for a successful pDelay exchange.  This is
+	 * needed when the remote master is a plain IEEE 1588 device that does
+	 * not implement the 802.1AS peer-delay mechanism.
+	 */
+	port_ds->as_capable = true;
+#endif
 
 	port_ds->neighbor_prop_delay = 0;
 	port_ds->neighbor_prop_delay_thresh = GPTP_NEIGHBOR_PROP_DELAY_THR;

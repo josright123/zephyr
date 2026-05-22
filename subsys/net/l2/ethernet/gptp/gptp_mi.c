@@ -751,6 +751,8 @@ static void gptp_update_local_port_clock(void)
 	const struct device *clk;
 	struct net_ptp_time tm;
 	unsigned int key;
+	
+		NET_INFO("offset from master: gptp_update_local_port_clock ");
 
 	state = &GPTP_STATE()->clk_slave_sync;
 	global_ds = GPTP_GLOBAL_DS();
@@ -838,6 +840,11 @@ static void gptp_update_local_port_clock(void)
 				 nanosecond_diff, ppb);
 		}
 	}
+
+	//if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
+		NET_INFO("offset from master: %"PRId64" s %6"PRId64" ns  drift_acc %.0f path_delay %"PRId64" ns ",
+			 second_diff, nanosecond_diff, gptp_clock.pi_drift, (int64_t)port_ds->neighbor_prop_delay);
+	//}
 }
 #endif /* CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE */
 
