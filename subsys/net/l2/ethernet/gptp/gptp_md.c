@@ -163,6 +163,13 @@ static int gptp_set_md_sync_receive(int port,
 
 	sync_rcv->upstream_tx_time -= delay_asymmetry_rated;
 
+	/* Read 802.1AS organization-specific TLV fields only if present.
+	 * A non-compliant PTP master (IEEE 1588 only) may omit the TLV,
+	 * resulting in a short Follow_Up packet.  Use neutral defaults so
+	 * that synchronisation can still proceed: rate_ratio = 1.0 (no
+	 * frequency offset), phase/frequency change = 0.
+	 */
+	if (net_pkt_get_len(state->rcvd_follow_up_ptr) >= GPTP_FOLLOW_UP_LEN) {
 	sync_rcv->rate_ratio = net_ntohl(fup->tlv.cumulative_scaled_rate_offset);
 	sync_rcv->rate_ratio /= GPTP_POW2_41;
 	sync_rcv->rate_ratio += 1;
@@ -175,6 +182,14 @@ static int gptp_set_md_sync_receive(int port,
 		net_ntohll(fup->tlv.last_gm_phase_change.low);
 	sync_rcv->last_gm_freq_change =
 		net_ntohl(fup->tlv.scaled_last_gm_freq_change);
+	} else {
+		/* No TLV present, use neutral defaults. (assume ideal master, rate_ratio = 1.0, no drift)*/
+		sync_rcv->rate_ratio = 1.0;
+		sync_rcv->gm_time_base_indicator = 0U;
+		sync_rcv->last_gm_phase_change.high = 0;
+		sync_rcv->last_gm_phase_change.low = 0;
+		sync_rcv->last_gm_freq_change = 0.0;
+	}
 
 	return 0;
 }
