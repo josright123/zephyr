@@ -752,7 +752,7 @@ static void gptp_update_local_port_clock(void)
 	struct net_ptp_time tm;
 	unsigned int key;
 	
-		NET_INFO("offset from master: gptp_update_local_port_clock ");
+		//NET_INFO("offset from master: gptp_update_local_port_clock ");
 
 	state = &GPTP_STATE()->clk_slave_sync;
 	global_ds = GPTP_GLOBAL_DS();

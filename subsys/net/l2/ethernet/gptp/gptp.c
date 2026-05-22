@@ -229,9 +229,9 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	#endif
 	#if 1 //260522.track.good1-step0(new)
 		if (GPTP_PACKET_LEN(pkt) < GPTP_FOLLOW_UP_LEN) {
-			NET_WARN("Short FOLLOWUP: %zd bytes (expected %zd)"
-				 " - 802.1AS TLV absent - using defaults",
-				 GPTP_PACKET_LEN(pkt), GPTP_FOLLOW_UP_LEN);
+			// NET_WARN("Short FOLLOWUP: %zd bytes (expected %zd)"
+			// 	 " - 802.1AS TLV absent - using defaults",
+			// 	 GPTP_PACKET_LEN(pkt), GPTP_FOLLOW_UP_LEN);
 		}
 	#endif
 
